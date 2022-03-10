@@ -1,10 +1,12 @@
 package android.notifications;
 
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
+//import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
@@ -13,6 +15,7 @@ import android.widget.Toast;
 /**
  * Created by mukesh on 19/5/15.
  */
+@TargetApi(Build.VERSION_CODES.DONUT)
 public class IncomingSms  extends BroadcastReceiver {
 
     // Get the object of SmsManager
@@ -50,7 +53,10 @@ public class IncomingSms  extends BroadcastReceiver {
                     msgrcv.putExtra("ticker", senderNum);
                     msgrcv.putExtra("title", senderNum);
                     msgrcv.putExtra("text", message);
-                    LocalBroadcastManager.getInstance(context).sendBroadcast(msgrcv);
+
+                    context.sendBroadcast(msgrcv);
+
+//                    LocalBroadcastManager.getInstance(context).sendBroadcast(msgrcv);
                 } // end for loop
             } // bundle is null
 

@@ -1,5 +1,6 @@
 package android.notifications;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,20 +8,30 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
+//import android.support.v4.content.LocalBroadcastManager;
+import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
 
     ListView list;
     CustomListAdapter adapter;
     ArrayList<Model> modelList;
+
+    //TTS object
+    private TextToSpeech myTTS;
+    //status check code
+    private int MY_DATA_CHECK_CODE = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +41,13 @@ public class MainActivity extends Activity {
         adapter = new CustomListAdapter(getApplicationContext(), modelList);
         list=(ListView)findViewById(R.id.list);
         list.setAdapter(adapter);
-        LocalBroadcastManager.getInstance(this).registerReceiver(onNotice, new IntentFilter("Msg"));
+
+        Intent checkTTSIntent = new Intent();
+        checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
+        startActivityForResult(checkTTSIntent, MY_DATA_CHECK_CODE);
+
+        this.getBaseContext().registerReceiver(onNotice, new IntentFilter("Msg"));
+//        LocalBroadcastManager.getInstance(this).registerReceiver(onNotice, new IntentFilter("Msg"));
     }
 
     @Override
@@ -78,6 +95,13 @@ public class MainActivity extends Activity {
 
                 if(modelList !=null) {
                     modelList.add(model);
+
+//                    Intent checkTTSIntent = new Intent();
+//                    checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
+//                    startActivityForResult(checkTTSIntent, MY_DATA_CHECK_CODE);
+
+                    myTTS.speak(model.getName(), TextToSpeech.QUEUE_FLUSH, null);
+
                     adapter.notifyDataSetChanged();
                 }else {
                     modelList = new ArrayList<Model>();
@@ -89,7 +113,46 @@ public class MainActivity extends Activity {
 
             } catch (Exception e) {
                 e.printStackTrace();
+            }finally {
+                if(myTTS != null){
+//                    myTTS.shutdown();
+                }
             }
         }
     };
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public void onInit(int initStatus) {
+        //check for successful instantiation
+        if (initStatus == TextToSpeech.SUCCESS) {
+            int resulLanguage = myTTS.setLanguage(new Locale("TH"));
+            if(myTTS.isLanguageAvailable(new Locale("TH"))==TextToSpeech.LANG_AVAILABLE) {
+                myTTS.setSpeechRate(0.6f);
+
+                if (resulLanguage >= TextToSpeech.LANG_AVAILABLE) {
+                    Log.d("init TTS", "onInit: Success");
+//                    myTTS.speak("ทดสอบ", TextToSpeech.QUEUE_FLUSH, null);
+                }
+            }
+        }
+        else if (initStatus == TextToSpeech.ERROR) {
+            Toast.makeText(this, "Sorry! Text To Speech failed...", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == MY_DATA_CHECK_CODE) {
+            if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
+                //the user has the necessary data - create the TTS
+                myTTS = new TextToSpeech(this, this,  "com.google.android.tts");
+            }
+            else {
+                //no data - install it now
+                Intent installTTSIntent = new Intent();
+                installTTSIntent.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+                startActivity(installTTSIntent);
+            }
+        }
+    }
 }

@@ -1,32 +1,35 @@
 package android.notifications;
 
+import android.annotation.TargetApi;
 import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
-import android.support.v4.content.LocalBroadcastManager;
+//import android.support.v4.content.LocalBroadcastManager;
 
 import java.io.ByteArrayOutputStream;
 
 
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class NotificationService extends NotificationListenerService {
 
     Context context;
 
     @Override
-
     public void onCreate() {
 
         super.onCreate();
         context = getApplicationContext();
 
     }
-    @Override
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
         String pack = sbn.getPackageName();
         String ticker ="";
@@ -56,7 +59,11 @@ public class NotificationService extends NotificationListenerService {
             byte[] byteArray = stream.toByteArray();
             msgrcv.putExtra("icon",byteArray);
         }
-        LocalBroadcastManager.getInstance(context).sendBroadcast(msgrcv);
+
+        if("com.facebook.orca".equalsIgnoreCase(pack)){
+            context.sendBroadcast(msgrcv);
+        }
+//        LocalBroadcastManager.getInstance(context).sendBroadcast(msgrcv);
 
 
     }
